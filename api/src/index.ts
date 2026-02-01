@@ -6,7 +6,10 @@ import onboardingRoutes from './routes/onboarding';
 import verificationRoutes from './routes/verification';
 import { authenticate } from './middleware/auth';
 import { errorHandler } from './middleware/errorHandler';
+import { correlationIdMiddleware } from './middleware/correlationId';
+import { requestLogger } from './middleware/requestLogger';
 import { store } from './store/inMemoryStore';
+import logger from './utils/logger';
 
 const app: Express = express();
 const PORT = process.env.PORT || 3000;
@@ -14,6 +17,10 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Logging middleware (must be early in the chain)
+app.use(correlationIdMiddleware);
+app.use(requestLogger);
 
 // Health check
 app.get('/health', (_req, res) => {
@@ -40,9 +47,9 @@ function initializeSampleData(): void {
     password: 'password123',
   });
 
-  console.log('Sample user created:', {
+  logger.info('Sample user created', {
+    userId: sampleUser.id,
     email: sampleUser.email,
-    password: 'password123',
   });
 }
 
@@ -50,8 +57,10 @@ function initializeSampleData(): void {
 if (require.main === module) {
   initializeSampleData();
   app.listen(PORT, () => {
-    console.log(`🚀 Server is running on http://localhost:${PORT}`);
-    console.log(`📝 API Documentation: See Requirement.md`);
+    logger.info('Server started', {
+      port: PORT,
+      environment: process.env.NODE_ENV || 'development',
+    });
   });
 }
 

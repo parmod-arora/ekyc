@@ -95,9 +95,8 @@ describe('Onboarding Routes', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.error.code).toBe('VALIDATION_ERROR');
-      expect(response.body.error.details.fieldErrors).toHaveProperty(
-        'draft.profile'
-      );
+      expect(response.body.error.details.fieldErrors).toBeDefined();
+      expect(response.body.error.details.fieldErrors['draft.profile']).toBeDefined();
     });
 
     it('should return 400 with invalid date format', async () => {

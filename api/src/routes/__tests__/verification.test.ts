@@ -9,7 +9,6 @@ import {
 
 describe('Verification Routes', () => {
   let accessToken: string;
-  let userId: string;
 
   beforeEach(() => {
     store.reset();
@@ -19,7 +18,6 @@ describe('Verification Routes', () => {
       fullName: 'Test User',
       password: 'password123',
     });
-    userId = user.id;
 
     // Create a session
     accessToken = generateAccessToken();

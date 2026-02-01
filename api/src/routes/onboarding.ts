@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { store } from '../store/inMemoryStore';
 import { submitOnboardingSchema } from '../utils/validation';
 import { AuthRequest } from '../middleware/auth';
+import { RequestWithCorrelation } from '../middleware/correlationId';
 import { SubmitOnboardingResponse } from '../types';
+import { createLogger } from '../utils/logger';
 
 const router = Router();
 
@@ -11,10 +13,14 @@ const router = Router();
  * POST /v1/onboarding/submit
  * Submit onboarding draft for verification
  */
-router.post('/submit', (req: AuthRequest, res: Response) => {
+router.post('/submit', (req: AuthRequest & RequestWithCorrelation, res: Response) => {
+  const userId = req.userId;
+  const correlationId = req.correlationId || 'unknown';
+  const logger = createLogger({ correlationId, userId: userId || 'anonymous' });
+
   try {
-    const userId = req.userId;
     if (!userId) {
+      logger.warn('Onboarding submit failed - not authenticated');
       res.status(401).json({
         error: {
           code: 'UNAUTHORIZED',
@@ -27,6 +33,11 @@ router.post('/submit', (req: AuthRequest, res: Response) => {
     // Validate request
     const validated = submitOnboardingSchema.parse(req.body);
     const { draft } = validated;
+
+    logger.info('Onboarding submission started', {
+      userId,
+      documentType: draft.document.documentType,
+    });
 
     // Save draft (optional - for resume functionality)
     store.saveOnboardingDraft(userId, draft);
@@ -43,6 +54,12 @@ router.post('/submit', (req: AuthRequest, res: Response) => {
       },
     };
     store.setVerificationStatus(userId, verificationStatus);
+
+    logger.info('Onboarding submission completed', {
+      userId,
+      submissionId,
+      status: 'IN_PROGRESS',
+    });
 
     // Return response
     const response: SubmitOnboardingResponse = {

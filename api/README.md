@@ -11,6 +11,8 @@ A TypeScript + Express.js backend service for eKYC (electronic Know Your Custome
 - ✅ Comprehensive test coverage
 - ✅ In-memory data store (for development/testing)
 - ✅ TypeScript for type safety
+- ✅ **Winston logging with correlation IDs and user tracking**
+- ✅ **Request/response logging for all API calls**
 
 ## Project Structure
 
@@ -27,10 +29,13 @@ api/
 │   │   └── verification.ts      # Verification routes
 │   ├── middleware/              # Express middleware
 │   │   ├── auth.ts              # Authentication middleware
-│   │   └── errorHandler.ts      # Error handling middleware
+│   │   ├── errorHandler.ts      # Error handling middleware
+│   │   ├── correlationId.ts     # Correlation ID middleware
+│   │   └── requestLogger.ts      # Request logging middleware
 │   └── utils/                   # Utility functions
 │       ├── token.ts             # Token generation utilities
-│       └── validation.ts        # Zod validation schemas
+│       ├── validation.ts        # Zod validation schemas
+│       └── logger.ts            # Winston logger configuration
 ├── http-scripts.http            # HTTP scripts for manual testing
 ├── package.json
 ├── tsconfig.json
@@ -235,6 +240,63 @@ All error responses follow a consistent format:
 - `INVALID_REFRESH_TOKEN` - Invalid or expired refresh token (401)
 - `USER_NOT_FOUND` - User not found (404)
 - `INTERNAL_ERROR` - Internal server error (500)
+
+## Logging
+
+The application uses **Winston** for comprehensive logging with the following features:
+
+### Features
+
+- **Correlation ID Tracking**: Every request gets a unique correlation ID (from `X-Correlation-Id` header or auto-generated)
+- **User ID Tracking**: All authenticated requests include the user ID in logs
+- **Request/Response Logging**: All API calls are logged with method, path, status code, and duration
+- **Structured Logging**: JSON format for easy parsing and analysis
+- **Log Rotation**: Daily log rotation with automatic archival (14 days for info, 30 days for errors)
+- **Multiple Transports**: Console (development) and file (production)
+
+### Log Files
+
+Logs are stored in the `logs/` directory:
+
+- `application-YYYY-MM-DD.log` - All application logs (info level and above)
+- `error-YYYY-MM-DD.log` - Error logs only
+- `exceptions-YYYY-MM-DD.log` - Unhandled exceptions
+- `rejections-YYYY-MM-DD.log` - Unhandled promise rejections
+
+### Log Format
+
+Each log entry includes:
+- **Timestamp**: ISO 8601 format with milliseconds
+- **Correlation ID**: Unique request identifier
+- **User ID**: Authenticated user ID (or "anonymous" for public endpoints)
+- **Level**: Log level (info, warn, error, debug)
+- **Message**: Human-readable message
+- **Metadata**: Additional context (method, path, status, duration, etc.)
+
+### Example Log Entry
+
+```json
+{
+  "timestamp": "2026-01-16T10:30:45.123Z",
+  "level": "info",
+  "message": "Login successful",
+  "correlationId": "550e8400-e29b-41d4-a716-446655440000",
+  "userId": "USR-001",
+  "email": "jane.doe@example.com",
+  "expiresAt": "2026-01-16T11:30:45.123Z"
+}
+```
+
+### Configuration
+
+Set environment variables to configure logging:
+
+- `LOG_LEVEL`: Log level (default: `info`) - Options: `error`, `warn`, `info`, `debug`
+- `NODE_ENV`: Environment (default: `development`) - Affects console format
+
+### Correlation ID
+
+Clients can send a correlation ID in the `X-Correlation-Id` header. If not provided, one is automatically generated. The correlation ID is returned in the response header `X-Correlation-Id` for client tracking.
 
 ## Manual Testing
 

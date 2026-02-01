@@ -1,7 +1,7 @@
 ### eKYC API Test Scripts
 ### Base URL
 @baseUrl = http://localhost:3000
-@accessToken = 
+@accessToken = access_2ca179dea620a46199ceb9d5e3583f7a685e0947b7e9445be46132688669e19e
 @refreshToken = 
 
 ### Variables (will be set after login)
@@ -33,6 +33,19 @@ Content-Type: application/json
 
 {
   "email": "jane.doe@example.com",
+  "password": "wrongpassword"
+}
+
+
+
+###
+### 3.1 Login with Invalid Credentials
+###
+POST {{baseUrl}}/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "invalid@example.com",
   "password": "wrongpassword"
 }
 

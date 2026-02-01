@@ -1,6 +1,8 @@
 import { Router, Response } from 'express';
 import { store } from '../store/inMemoryStore';
 import { AuthRequest } from '../middleware/auth';
+import { RequestWithCorrelation } from '../middleware/correlationId';
+import { createLogger } from '../utils/logger';
 
 const router = Router();
 
@@ -8,9 +10,13 @@ const router = Router();
  * GET /v1/me
  * Get current authenticated user
  */
-router.get('/me', (req: AuthRequest, res: Response) => {
+router.get('/', (req: AuthRequest & RequestWithCorrelation, res: Response) => {
   const userId = req.userId;
+  const correlationId = req.correlationId || 'unknown';
+  const logger = createLogger({ correlationId, userId: userId || 'anonymous' });
+
   if (!userId) {
+    logger.warn('Get user failed - not authenticated');
     res.status(401).json({
       error: {
         code: 'UNAUTHORIZED',
@@ -22,6 +28,7 @@ router.get('/me', (req: AuthRequest, res: Response) => {
 
   const user = store.getUserById(userId);
   if (!user) {
+    logger.warn('Get user failed - user not found', { userId });
     res.status(404).json({
       error: {
         code: 'USER_NOT_FOUND',
@@ -30,6 +37,8 @@ router.get('/me', (req: AuthRequest, res: Response) => {
     });
     return;
   }
+
+  logger.info('User retrieved successfully', { userId });
 
   res.status(200).json({
     id: user.id,

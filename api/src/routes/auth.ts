@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, Response } from 'express';
 import { z } from 'zod';
 import { store } from '../store/inMemoryStore';
 import {
@@ -8,6 +8,8 @@ import {
 } from '../utils/token';
 import { loginSchema, refreshSchema } from '../utils/validation';
 import { LoginResponse, RefreshResponse } from '../types';
+import { createLogger } from '../utils/logger';
+import { RequestWithCorrelation } from '../middleware/correlationId';
 
 const router = Router();
 
@@ -15,15 +17,21 @@ const router = Router();
  * POST /v1/auth/login
  * Login with email and password
  */
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', async (req: RequestWithCorrelation, res: Response) => {
+  const correlationId = req.correlationId || 'unknown';
+  const logger = createLogger({ correlationId });
+
   try {
     // Validate request
     const validated = loginSchema.parse(req.body);
-    const { email, password } = validated;
+    const { email } = validated;
+
+    logger.info('Login attempt', { email });
 
     // Find user by email
     const user = store.getUserByEmail(email);
-    if (!user || user.password !== password) {
+    if (!user || user.password !== validated.password) {
+      logger.warn('Login failed - invalid credentials', { email });
       res.status(401).json({
         error: {
           code: 'INVALID_CREDENTIALS',
@@ -46,6 +54,12 @@ router.post('/login', async (req: Request, res: Response) => {
       userId: user.id,
     };
     store.createSession(session);
+
+    logger.info('Login successful', {
+      userId: user.id,
+      email: user.email,
+      expiresAt,
+    });
 
     // Return response
     const response: LoginResponse = {
@@ -85,15 +99,21 @@ router.post('/login', async (req: Request, res: Response) => {
  * POST /v1/auth/refresh
  * Refresh access token using refresh token
  */
-router.post('/refresh', async (req: Request, res: Response) => {
+router.post('/refresh', async (req: RequestWithCorrelation, res: Response) => {
+  const correlationId = req.correlationId || 'unknown';
+  const logger = createLogger({ correlationId });
+
   try {
     // Validate request
     const validated = refreshSchema.parse(req.body);
     const { refreshToken } = validated;
 
+    logger.info('Token refresh attempt');
+
     // Find session by refresh token
     const session = store.getSessionByRefreshToken(refreshToken);
     if (!session) {
+      logger.warn('Token refresh failed - invalid refresh token');
       res.status(401).json({
         error: {
           code: 'INVALID_REFRESH_TOKEN',
@@ -119,6 +139,11 @@ router.post('/refresh', async (req: Request, res: Response) => {
       userId: session.userId,
     };
     store.updateSession(session.accessToken, newSession);
+
+    logger.info('Token refresh successful', {
+      userId: session.userId,
+      expiresAt: newExpiresAt,
+    });
 
     // Return response
     const response: RefreshResponse = {
