@@ -171,5 +171,60 @@ describe('Onboarding Routes', () => {
       expect(response.status).toBe(400);
       expect(response.body.error.code).toBe('VALIDATION_ERROR');
     });
+
+    it('should return 400 with fieldErrors shape containing specific field paths and messages', async () => {
+      const response = await request(app)
+        .post('/v1/onboarding/submit')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          draft: {
+            profile: {
+              fullName: 'Jane Doe',
+              // Missing dateOfBirth and nationality
+            },
+            document: {
+              documentType: 'INVALID_TYPE',
+              // Missing documentNumber
+            },
+            address: {
+              // Missing addressLine1, city, country
+            },
+            consents: {
+              termsAccepted: false,
+            },
+          },
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBeDefined();
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+      expect(response.body.error.message).toBeDefined();
+      expect(response.body.error.details).toBeDefined();
+      expect(response.body.error.details.fieldErrors).toBeDefined();
+      expect(typeof response.body.error.details.fieldErrors).toBe('object');
+
+      const fieldErrors = response.body.error.details.fieldErrors;
+      
+      // Verify fieldErrors is an object with string keys and string values
+      expect(Object.keys(fieldErrors).length).toBeGreaterThan(0);
+      Object.keys(fieldErrors).forEach((fieldPath) => {
+        expect(typeof fieldPath).toBe('string');
+        expect(typeof fieldErrors[fieldPath]).toBe('string');
+        expect(fieldErrors[fieldPath].length).toBeGreaterThan(0);
+      });
+
+      // Verify specific field paths exist (using dot notation for nested fields)
+      const fieldPaths = Object.keys(fieldErrors);
+      
+      // Should have errors for missing/invalid fields
+      // Check for profile fields
+      const profileFields = fieldPaths.filter((path) => path.startsWith('draft.profile.'));
+      expect(profileFields.length).toBeGreaterThan(0);
+      
+      // Verify field paths use dot notation for nested fields
+      profileFields.forEach((path) => {
+        expect(path).toMatch(/^draft\.profile\./);
+      });
+    });
   });
 });

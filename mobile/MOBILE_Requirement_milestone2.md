@@ -8,5 +8,5 @@
 
 ### 2.3 Testing (Must Have)
 Write at least:
-● ✅ API tests for submit validation error shape (fi eldErrors)
+● ✅ API tests for submit validation error shape (fieldErrors)
 ● ✅ Mobile unit tests for auth/session state transitions OR a focused test for refresh-then-retry behavior
