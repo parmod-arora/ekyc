@@ -1,0 +1,349 @@
+### eKYC API Test Scripts
+### Base URL
+@baseUrl = http://localhost:3000
+@accessToken = 
+@refreshToken = 
+
+### Variables (will be set after login)
+# After running the login request, copy the accessToken and refreshToken from the response
+# and update the variables above
+
+###
+### 1. Health Check
+###
+GET {{baseUrl}}/health
+
+###
+### 2. Login
+### POST /v1/auth/login
+###
+POST {{baseUrl}}/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "jane.doe@example.com",
+  "password": "password123"
+}
+
+###
+### 3. Login with Invalid Credentials
+###
+POST {{baseUrl}}/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "jane.doe@example.com",
+  "password": "wrongpassword"
+}
+
+###
+### 4. Login with Invalid Email Format
+###
+POST {{baseUrl}}/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "invalid-email",
+  "password": "password123"
+}
+
+###
+### 5. Refresh Token
+### POST /v1/auth/refresh
+### Note: Replace {{refreshToken}} with actual refresh token from login response
+###
+POST {{baseUrl}}/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+### 6. Refresh Token with Invalid Token
+###
+POST {{baseUrl}}/v1/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "invalid_refresh_token"
+}
+
+###
+### 7. Get Current User
+### GET /v1/me
+### Note: Replace {{accessToken}} with actual access token from login response
+###
+GET {{baseUrl}}/v1/me
+Authorization: Bearer {{accessToken}}
+
+###
+### 8. Get Current User without Token
+###
+GET {{baseUrl}}/v1/me
+
+###
+### 9. Get Current User with Invalid Token
+###
+GET {{baseUrl}}/v1/me
+Authorization: Bearer invalid_token
+
+###
+### 10. Submit Onboarding
+### POST /v1/onboarding/submit
+### Note: Replace {{accessToken}} with actual access token from login response
+###
+POST {{baseUrl}}/v1/onboarding/submit
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "draft": {
+    "profile": {
+      "fullName": "Jane Doe",
+      "dateOfBirth": "1990-05-15",
+      "nationality": "US"
+    },
+    "document": {
+      "documentType": "PASSPORT",
+      "documentNumber": "P12345678"
+    },
+    "address": {
+      "addressLine1": "123 Main St",
+      "city": "Springfield",
+      "country": "US"
+    },
+    "consents": {
+      "termsAccepted": true
+    }
+  }
+}
+
+###
+### 11. Submit Onboarding with Driver License
+###
+POST {{baseUrl}}/v1/onboarding/submit
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "draft": {
+    "profile": {
+      "fullName": "John Smith",
+      "dateOfBirth": "1985-03-20",
+      "nationality": "CA"
+    },
+    "document": {
+      "documentType": "DRIVER_LICENSE",
+      "documentNumber": "DL98765432"
+    },
+    "address": {
+      "addressLine1": "456 Oak Avenue",
+      "city": "Toronto",
+      "country": "CA"
+    },
+    "consents": {
+      "termsAccepted": true
+    }
+  }
+}
+
+###
+### 12. Submit Onboarding with National ID
+###
+POST {{baseUrl}}/v1/onboarding/submit
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "draft": {
+    "profile": {
+      "fullName": "Maria Garcia",
+      "dateOfBirth": "1992-07-10",
+      "nationality": "MX"
+    },
+    "document": {
+      "documentType": "NATIONAL_ID",
+      "documentNumber": "NID123456789"
+    },
+    "address": {
+      "addressLine1": "789 Pine Street",
+      "city": "Mexico City",
+      "country": "MX"
+    },
+    "consents": {
+      "termsAccepted": true
+    }
+  }
+}
+
+###
+### 13. Submit Onboarding with Missing Fields
+###
+POST {{baseUrl}}/v1/onboarding/submit
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "draft": {
+    "profile": {
+      "fullName": "Jane Doe"
+    },
+    "document": {
+      "documentType": "PASSPORT",
+      "documentNumber": "P12345678"
+    },
+    "address": {
+      "addressLine1": "123 Main St",
+      "city": "Springfield",
+      "country": "US"
+    },
+    "consents": {
+      "termsAccepted": true
+    }
+  }
+}
+
+###
+### 14. Submit Onboarding with Invalid Date Format
+###
+POST {{baseUrl}}/v1/onboarding/submit
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "draft": {
+    "profile": {
+      "fullName": "Jane Doe",
+      "dateOfBirth": "15-05-1990",
+      "nationality": "US"
+    },
+    "document": {
+      "documentType": "PASSPORT",
+      "documentNumber": "P12345678"
+    },
+    "address": {
+      "addressLine1": "123 Main St",
+      "city": "Springfield",
+      "country": "US"
+    },
+    "consents": {
+      "termsAccepted": true
+    }
+  }
+}
+
+###
+### 15. Submit Onboarding with Invalid Document Type
+###
+POST {{baseUrl}}/v1/onboarding/submit
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "draft": {
+    "profile": {
+      "fullName": "Jane Doe",
+      "dateOfBirth": "1990-05-15",
+      "nationality": "US"
+    },
+    "document": {
+      "documentType": "INVALID_TYPE",
+      "documentNumber": "P12345678"
+    },
+    "address": {
+      "addressLine1": "123 Main St",
+      "city": "Springfield",
+      "country": "US"
+    },
+    "consents": {
+      "termsAccepted": true
+    }
+  }
+}
+
+###
+### 16. Submit Onboarding with Terms Not Accepted
+###
+POST {{baseUrl}}/v1/onboarding/submit
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "draft": {
+    "profile": {
+      "fullName": "Jane Doe",
+      "dateOfBirth": "1990-05-15",
+      "nationality": "US"
+    },
+    "document": {
+      "documentType": "PASSPORT",
+      "documentNumber": "P12345678"
+    },
+    "address": {
+      "addressLine1": "123 Main St",
+      "city": "Springfield",
+      "country": "US"
+    },
+    "consents": {
+      "termsAccepted": false
+    }
+  }
+}
+
+###
+### 17. Submit Onboarding without Authorization
+###
+POST {{baseUrl}}/v1/onboarding/submit
+Content-Type: application/json
+
+{
+  "draft": {
+    "profile": {
+      "fullName": "Jane Doe",
+      "dateOfBirth": "1990-05-15",
+      "nationality": "US"
+    },
+    "document": {
+      "documentType": "PASSPORT",
+      "documentNumber": "P12345678"
+    },
+    "address": {
+      "addressLine1": "123 Main St",
+      "city": "Springfield",
+      "country": "US"
+    },
+    "consents": {
+      "termsAccepted": true
+    }
+  }
+}
+
+###
+### 18. Get Verification Status
+### GET /v1/verification/status
+### Note: Replace {{accessToken}} with actual access token from login response
+###
+GET {{baseUrl}}/v1/verification/status
+Authorization: Bearer {{accessToken}}
+
+###
+### 19. Get Verification Status without Authorization
+###
+GET {{baseUrl}}/v1/verification/status
+
+###
+### 20. Get Verification Status with Invalid Token
+###
+GET {{baseUrl}}/v1/verification/status
+Authorization: Bearer invalid_token
+
+###
+### Complete Flow Test
+### 1. Login
+### 2. Get Current User
+### 3. Submit Onboarding
+### 4. Get Verification Status
+### 5. Refresh Token
+### 6. Get Current User with New Token
+###
